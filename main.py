@@ -121,7 +121,7 @@ class Neosintez:
         response = requests.post(req_url, headers=headers, data=payload)
         response_text = json.loads(response.text)
         if response.status_code == 200 and response_text['Total'] == 1:
-            return  response_text['Result'][0]['Object']['Id']
+            return response_text['Result'][0]['Object']['Id']
         elif response.status_code == 200 and response_text['Total'] > 1:
             return None
         else:
@@ -194,22 +194,22 @@ class Root(Neosintez):
         self.root_id = id
         self.keys_list = keys_list
         self.object_request_body = object_request_body
-        self.root_keys = self.__create_level_one()
+        self.levels_one = self.__init_level_one()
         Neosintez.ROOTS.append(self)
 
-    def __create_level_one(self):
+    def __init_level_one(self):
         return list(map(lambda name: LevelOne(name, self.root_id, self.object_request_body), self.keys_list))
 
     def __str__(self):
         return self.root_id
 
     def push_into_neosintez(self):
-        for root_key in self.root_keys:
-            root_key.get_data_from_excel()
-            root_key.get_delete_items()
-            root_key.delete_items()
-            root_key.get_level_two_names()
-            root_key.push_into_neosintez()
+        for level_one in self.levels_one:
+            level_one.get_data_from_excel()
+            level_one.get_delete_items()
+            level_one.delete_items()
+            level_one.get_level_two_names()
+            level_one.push_into_neosintez()
 
 
 class LevelOne(Neosintez):
@@ -218,7 +218,7 @@ class LevelOne(Neosintez):
         self.name = name
         self.parent = parent
         self.object_request_body = object_request_body
-        self.id = self.get_id_by_name(parent, level_one_class_id, name)
+        # self.id = self.get_id_by_name(parent, level_one_class_id, name)
         self.data = None
         self.delete_items_id = None
         self.level_two = {}
@@ -233,6 +233,7 @@ class LevelOne(Neosintez):
             f_path = files_directory + f_list[f_date.index(max(f_date))]
             self.data = pd.read_excel(f_path, sheet_name='TDSheet', converters={'№ поз. по ГП': str, 'Изм.': str})
             self.data.sort_values('Подобъект', inplace=True)
+            self.data['Изм.'] = self.data['Изм.'].map(lambda x: '0' if x != x else x)
 
     def get_delete_items(self):
         req_url = url + 'api/objects/search?take=20000'
@@ -298,7 +299,8 @@ class LevelOne(Neosintez):
     def get_level_two_names(self):
         level_two_names = tuple(pd.unique(self.data['Подобъект']))
         for level_two in level_two_names:
-            id = LevelOne.get_id_by_name(self.id, level_two_class_id, level_two)
+            # id = LevelOne.get_id_by_name(self.id, level_two_class_id, level_two)
+            id = LevelOne.get_id_by_name(self.parent, level_two_class_id, level_two)
             self.level_two[level_two] = id
 
     def push_into_neosintez(self):
@@ -355,7 +357,7 @@ class Item(Neosintez):
             2: self.str_atr,
             8: self.ref_atr,
         }
-        if not self.request_body:
+        if len(self.request_body) == 1:
 
             for j, attribute in self.ATTRIBUTES_MAPPING.iterrows():
                 atr_value = str(self.attributes_value[attribute['name']])
