@@ -221,6 +221,7 @@ class LevelOne(Neosintez):
         # self.id = self.get_id_by_name(parent, level_one_class_id, name)
         self.data = None
         self.delete_items_id = None
+        self.neosintez_items = None
         self.level_two = {}
 
     def __str__(self):
@@ -230,12 +231,15 @@ class LevelOne(Neosintez):
         f_list = [f for f in os.listdir(path=files_directory) if self.name in f and 'РД' in f]
         if f_list:
             f_date = [ctime(os.path.getctime(files_directory + f)) for f in f_list]
-            f_path = files_directory + f_list[f_date.index(max(f_date))]
-            self.data = pd.read_excel(f_path, sheet_name='TDSheet', converters={'№ поз. по ГП': str, 'Изм.': str})
+            self.f_path = files_directory + f_list[f_date.index(max(f_date))]
+            self.data = pd.read_excel(self.f_path, sheet_name='TDSheet', converters={'№ поз. по ГП': str, 'Изм.': str})
             self.data.sort_values('Подобъект', inplace=True)
             self.data['Изм.'] = self.data['Изм.'].map(lambda x: '0' if x != x else x)
 
-    def get_delete_items(self):
+    def delete_file(self):
+        os.remove(self.f_path)
+
+    def get_data_from_neosintez(self):
         req_url = url + 'api/objects/search?take=20000'
         payload = json.dumps({
             "Filters": [
@@ -259,26 +263,30 @@ class LevelOne(Neosintez):
         response = requests.post(req_url, headers=headers, data=payload)
         response = json.loads(response.text)
         if response['Result']:
-
             # извлечение словаря, где ключ - id, значение - занчение ключевого атрибута
-            items = dict(map(lambda x: (
-            x['Object']['Id'], x['Object']['Attributes'][key_attribute_id]['Value']),
-                                   response['Result']))
-            # кортеж идентификаторов дублей по ключевому атрибуту
-            double_items = tuple(filter(lambda k: k[1] > 1, map(lambda x: (x[0], list(items.values()).count(x[1])),
-                                                                   items.items())))
-            double_items_id = set(item[0] for item in double_items)
+            self.neosintez_items = dict(map(lambda x: (
+                x['Object']['Id'], x['Object']['Attributes'][key_attribute_id]['Value']),
+                             response['Result']))
 
-            # множество номеров потребностей
-            item_key_set = set(items.values())
-            import_item_key_set = set(self.data['Обозначение'].tolist())
+    def get_delete_items(self):
+        if self.neosintez_items is None:
+            self.get_data_from_neosintez()
+        items = self.neosintez_items
+        # кортеж идентификаторов дублей по ключевому атрибуту
+        double_items = tuple(filter(lambda k: k[1] > 1, map(lambda x: (x[0], list(items.values()).count(x[1])),
+                                                               items.items())))
+        double_items_id = set(item[0] for item in double_items)
 
-            canseled_items_set = item_key_set - import_item_key_set
-            canseled_items = tuple(filter(lambda x: x[1] in canseled_items_set, items.items()))
+        # множество номеров потребностей
+        item_key_set = set(items.values())
+        import_item_key_set = set(self.data['Обозначение'].tolist())
 
-            canseled_items_id = set(item[0] for item in canseled_items)
+        canseled_items_set = item_key_set - import_item_key_set
+        canseled_items = tuple(filter(lambda x: x[1] in canseled_items_set, items.items()))
 
-            self.delete_items_id = canseled_items_id | double_items_id
+        canseled_items_id = set(item[0] for item in canseled_items)
+
+        self.delete_items_id = canseled_items_id | double_items_id
         return self.delete_items_id
 
     def delete_items(self):
@@ -387,6 +395,16 @@ class Item(Neosintez):
         self.put_attributes(self.neosintez_id, self.request_body)
 
 
+def get_time():
+    """Функция возвращает текущую дату и время в строке формата
+    Y-m-d_H.M.S"""
+    return f'{datetime.now().strftime("%Y-%m-%d_%H.%M.%S")}'
+
+# создание файла для логов
+file_name = f'log/{get_time()}.txt'
+log = open(file_name, 'w')
+
+
 
 with open('config.json', encoding='utf-8') as config:
     config_dict = json.loads(config.read())
@@ -406,4 +424,27 @@ Neosintez.get_token()
 Neosintez.get_roots_from_neosintez()
 print(Neosintez.ROOTS)
 for root in Neosintez.ROOTS:
-    root.push_into_neosintez()
+    print('Обработка', root.root_id, end=' ', file=log)
+    for level_one in root.levels_one:
+        print(level_one.name, file=log)
+
+        level_one.get_data_from_excel()
+        if level_one.data is None:
+            print('Не найден файл', file=log)
+            continue
+
+        print('Количество комплектов в выгрузке', len(level_one.data), file=log)
+
+        level_one.get_delete_items()
+
+        print('Удалить комплектов', len(level_one.delete_items_id), file=log)
+
+        level_one.delete_items()
+        level_one.get_level_two_names()
+        level_one.push_into_neosintez()
+
+        print('Количество в Неосинтез в итоге:', len(level_one.neosintez_items), file=log)
+
+        level_one.delete_file()
+
+log.close()
