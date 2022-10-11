@@ -1,0 +1,17 @@
+{
+  "url": "https://construction.irkutskoil.ru/",
+  "root_class_id": "3aa54908-2283-ec11-911c-005056b6948b",
+  "level_one_class_id": "288a12fc-ad8f-ec11-911d-005056b6948b",
+  "level_one_name_attribute_id": "626370d8-ad8f-ec11-911d-005056b6948b",
+  "level_two_class_id": "07a6ecdd-89a1-ea11-9103-005056b6e70e",
+  "level_two_column_name": "Подобъект",
+  "item_class_id": "b0379bb3-cc70-e911-8115-817c3f53a992",
+  "object_attribute_id": "8f3be7b2-ff59-e911-8115-817c3f53a992",
+  "key_attribute_id": "4903a891-f402-eb11-9110-005056b6948b",
+  "key_column_name": "Потребность.Номер",
+  "config_attribute_id": "bfbd61bc-bd8e-ec11-911d-005056b6948b",
+  "bin_item_id": "f624e3ef-08d1-ec11-912c-005056b6948b",
+  "files_directory": "//irkoil/dfs/WorkDATA/1C_OBMEN/Неосинтез/МТО/",
+  "attributes_file": "attributes_mto.xlsx",
+  "auth_data_file": "auth_data.txt"
+  }
