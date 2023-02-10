@@ -32,22 +32,25 @@ class Neosintez:
 
     @property
     def _token(self):
-        if os.path.isfile('test_data/token.txt'):
-            # read saved token for debug mode
-            with open('test_data/token.txt') as token:
-                self._token_keeper = token.read()
+        if self._token_keeper:
+            return self._token_keeper
         else:
-            with open(self._config['auth_data_file']) as f:
-                # строка вида grant_type=password&username=????&password=??????&client_id=??????&client_secret=??????
-                payload = f.read()
-            req_url = self.url + 'connect/token'
+            if os.path.isfile('test_data/token.txt'):
+                # read saved token for debug mode
+                with open('test_data/token.txt') as token:
+                    self._token_keeper = token.read()
+            else:
+                with open(self._config['auth_data_file']) as f:
+                    # строка вида grant_type=password&username=??&password=????&client_id=????&client_secret=????
+                    payload = f.read()
+                req_url = self.url + 'connect/token'
 
-            headers = {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-            response = self._session.post(req_url, data=payload, headers=headers)
-            if response.status_code == 200:
-                self._token_keeper = json.loads(response.text)['access_token']
+                headers = {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+                response = self._session.post(req_url, data=payload, headers=headers)
+                if response.status_code == 200:
+                    self._token_keeper = json.loads(response.text)['access_token']
         return self._token_keeper
 
     def _get_id_by_name(self, parent_id, class_id, name, create=False):
@@ -179,7 +182,7 @@ class Neosintez:
             logging.warning(f'Item is not created {name} {response.status_code} {response.text}')
             return ''
 
-    def _get_id_by_key(self, parent_id, class_id, name, value, attribute_value_id):
+    def _get_id_by_key(self, parent_id, class_id, name, value, attribute_value_id, create=False):
         req_url = self.url + 'api/objects/search?take=30'
         payload = json.dumps({
             "Filters": [
@@ -212,8 +215,9 @@ class Neosintez:
         if response.status_code == 200 and response_text['Total'] == 1:
             return response_text['Result'][0]['Object']['Id']
         elif response.status_code == 200 and response_text['Total'] > 1:
+            logging.warning(f'More then one result is found for {parent_id}, class id {class_id}, value {value}')
             return None
-        else:
+        elif create:
             item_id = self._create_in_neosintez(parent_id, class_id, name)
             request_body = [{
                 'Name': 'forvalidation',
@@ -223,6 +227,8 @@ class Neosintez:
             }]
             self._put_attributes(item_id, request_body)
             return item_id
+        else:
+            return None
 
     def _put_attributes(self, item_id, request_body):
         req_url = self.url + f'api/objects/{item_id}/attributes'  # id сущности, в которой меняем атрибут
@@ -335,26 +341,37 @@ class Neosintez:
         :param items: list of items
         :return: dict like {subobject_name: root id}
         """
-        subobject_names = set(map(lambda x: x.subobject, items))
         construction_id = items[0].construction.self_id
+        subobject_names = set(map(lambda x: x.subobject, items))
+        result = {x: {'subobject': x} for x in subobject_names}
+
         all_subobjects = self._get_items_by_class(
             parent_id=self.COMMON_ATTRIBUTES_ID['subobject_list_parent_id'],
             class_id=self.COMMON_ATTRIBUTES_ID['subobject_list_class_id'],
         )
         all_subobjects = all_subobjects['Result']
-        # get dict {subobject name: title name}
+
+        # get dict {subobject name: title attribute value}
         subobject_title_name = dict(map(lambda x: (x['Object']['Name'], x['Object']['Attributes'][
-            self.COMMON_ATTRIBUTES_ID['titles_attribute_id']]['Value']['Name']), all_subobjects))
-        # only get relevant title names
-        titles_name = set([subobject_title_name.get(subobject_name) for subobject_name in subobject_names])
-        titles_name.discard(None)
-        roots_id = {}
-        for title_name in titles_name:
-            title_id = self._get_id_by_name(
+            self.COMMON_ATTRIBUTES_ID['titles_attribute_id']]['Value']['Id']), all_subobjects))
+
+        for subobject in result.values():
+            subobject['title_attribute_value'] = subobject_title_name.get(subobject['subobject'])
+
+        for subobject in result:
+            title_attribute_value = result[subobject]['title_attribute_value']
+
+            if not title_attribute_value:
+                continue
+
+            title_id = self._get_id_by_key(
                 parent_id=construction_id,
                 class_id=self.COMMON_ATTRIBUTES_ID['title_class_id'],
-                name=title_name
+                name='forvalidation',
+                value=title_attribute_value,
+                attribute_value_id=self.COMMON_ATTRIBUTES_ID['titles_attribute_id'],
             )
+
             if not title_id:
                 continue
 
@@ -364,10 +381,10 @@ class Neosintez:
                 name=self._config['root_name'],
                 create=True
             )
-            roots_id[title_name] = root_id
+            result[subobject]['root_id'] = root_id
 
-        subobject_roots_id = {subobject_name: roots_id.get(subobject_name) for subobject_name in subobject_names}
-        return subobject_roots_id
+        # subobject_roots_id = {subobject_name: roots_id.get(subobject_name) for subobject_name in subobject_names}
+        return result
 
     def get_group_by_group_names(self, items: list[Item]) -> dict[str, dict[str, str]]:
         """

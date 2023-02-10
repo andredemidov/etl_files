@@ -9,19 +9,32 @@ class IntegrateByModeConstruction:
 
     @staticmethod
     def _log_statistic(statistic: dict):
-        logging.info(', '.join([f'{c[0]}- {c[1]}' for c in statistic.items()]))
+        message = ', '.join([f'{c[0]} - {c[1]}' for c in statistic.items()])
+        if statistic.get('error'):
+            logging.warning(message)
+        else:
+            logging.info(message)
 
     def execute(self):
+        logging.info('Getting data')
         items = self._item_repository.get()
         statuses = [item.status for item in items]
         counter = Counter(statuses)
         self._log_statistic(counter)
 
+        logging.info('Creating')
         create_statistic = self._item_repository.create()
         self._log_statistic(create_statistic)
 
+        logging.info('Updating')
         update_statistic = self._item_repository.update()
         self._log_statistic(update_statistic)
+
+        logging.info('Deleting')
+        delete_statistic = self._item_repository.delete()
+        self._log_statistic(delete_statistic)
+
+        logging.info('Completed')
 
 
 class IntegrateByMode:

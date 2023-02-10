@@ -7,11 +7,20 @@ import pandas as pd
 
 class ExcelAdapter:
 
-    def __init__(self, files_directory: str, mapping_data: dict):
+    def __init__(self, files_directory: str, suffix, mapping_data: dict):
         self._files_directory = files_directory
         self._mapping_data = mapping_data
+        self._file_name = None
+        self._suffix: str = suffix
 
-    def get_data(self, mode: str, name: str):
+    def get_data(self, mode: str, name: str) -> list[dict]:
+        """
+        Method reads data from the file in files directory, serializes the data to list of dicts,
+        performs extra handling if necessary and returns data
+        :param mode: uses to detect file suffix.
+        :param name: part of file name
+        :return: list of serialized data
+        """
         f_path = self._get_file_path(mode, name)
         data = self._read_excel(f_path, mode).to_json(orient='records', force_ascii=False)
         input_data = json.loads(data) if data else list()
@@ -20,24 +29,17 @@ class ExcelAdapter:
         return output_data
 
     def _get_file_path(self, mode, name):
-        prefix = {
-            'appius': 'РД',
-            'mto': 'ЗО',
-            'delivery_order': 'Д',
-            'notification': 'У',
-            'storage': 'Склад',
-        }
-
-        f_list = [f for f in os.listdir(path=self._files_directory) if name in f and prefix[mode] in f and '~' not in f]
+        f_list = [f for f in os.listdir(path=self._files_directory) if name in f and self._suffix in f and '~' not in f]
         if f_list:
             f_date = [os.path.getctime(self._files_directory + f) for f in f_list]
-            f_path = self._files_directory + f_list[f_date.index(max(f_date))]
-            # f_prev_path = self._files_directory + f'prev/{name}_{prefix[mode]}_prev.xlsx'
+            self._file_name = f_list[f_date.index(max(f_date))]
+            _file_path = self._files_directory + self._file_name
+
         else:
             message = f'There is no file in {self._files_directory}'
             raise FileNotFoundError(message)
 
-        return f_path
+        return _file_path
 
     @staticmethod
     def _read_excel(file_path, mode):
@@ -162,3 +164,12 @@ class ExcelAdapter:
         else:
             result = None
         return result
+
+    def finish(self):
+        """
+        Method incapsulates the action upon finish. Now there is one action to move the handled file to the prev folder
+        :return:
+        """
+        f_path = self._files_directory + self._file_name
+        f_prev_path = self._files_directory + 'prev/prev_' + self._file_name
+        os.replace(f_path, f_prev_path)

@@ -2,7 +2,7 @@
   "url": "https://construction.irkutskoil.ru/",
   "logs_path": "c://python/logs/",
   "root_class_id": "a60b977c-f049-ed11-9149-005056b6948b",
-  "root_name": "Отгруженные материалы",
+  "root_name": "!Отгруженные материалы",
   "group_class_id": "0dd7d9f9-d259-e911-8115-817c3f53a992",
   "group_by_column_name": "Папка",
   "subobject_column_name": "Потребность.Объект строительства",
@@ -13,6 +13,7 @@
   "name_column_name": "Потребность.Номенклатура.Наименование",
   "config_attribute_id": "ab479cfc-f496-e911-80cd-9783b3495d40",
   "files_directory": "test_data/",
+  "file_suffix": "_У",
   "attributes_file": "configs/attributes_notification.xlsx",
   "auth_data_file": "auth_data.txt"
   }

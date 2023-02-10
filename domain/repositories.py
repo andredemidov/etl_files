@@ -122,7 +122,7 @@ class ItemRepository:
                 )
                 self.add(item)
             else:
-                current_dict[self._key_column_name] = current_item
+                current_dict[current_item[self._key_column_name]] = current_item
         # map new data with current
         for new_item in self._entries:
             # if a match exists, remove it from the current_dict and take the id to update
@@ -157,7 +157,8 @@ class ItemRepository:
         not_deleted = self.get('updated', 'new')
         subobjects_roots = self._target_adapter.get_root_by_subobject_names(not_deleted)
         for item in not_deleted:
-            item.root_id = subobjects_roots.get(item.subobject)
+            subobject_data = subobjects_roots.get(item.subobject)
+            item.root_id = subobject_data.get('root_id') if subobject_data else None
             if not item.root_id:
                 item.status = 'skip'
 
@@ -199,8 +200,7 @@ class ItemRepository:
         :return: a counter dict with keys "success" and "error"
         """
         statistic = {'success': 0, 'error': 0}
-        items_with_delete_status = list(filter(lambda x: x.status == 'delete', self.get()))
-        for item in items_with_delete_status:
+        for item in self.get('delete'):
             status = self._target_adapter.delete_item(item)
             statistic[status] += 1
         return statistic

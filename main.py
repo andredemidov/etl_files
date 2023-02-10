@@ -38,7 +38,7 @@ if __name__ == '__main__':
     )
     logging.info(f'Start {mode} {config_file_name_suffix}')
     target_adapter = Neosintez(url, config, mapping_data)
-    new_data_adapter = ExcelAdapter(config['files_directory'], mapping_data)
+    new_data_adapter = ExcelAdapter(config['files_directory'], config['file_suffix'], mapping_data)
 
     try:
         construction_repository = ConstructionRepository(target_adapter)
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
         for construction in constructions:
             try:
-                # logging.info(construction.name)
+                logging.info(construction.name)
                 item_repository = ItemRepository(
                     construction=construction,
                     target_adapter=target_adapter,
@@ -60,6 +60,7 @@ if __name__ == '__main__':
                 )
                 task = IntegrateByModeConstruction(item_repository)
                 task.execute()
+                new_data_adapter.finish()
             except Exception as e:
                 print(e)
                 logging.exception('Exception occurred')
