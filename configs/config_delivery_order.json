@@ -1,0 +1,18 @@
+{
+  "url": "https://construction.irkutskoil.ru/",
+  "logs_path": "c://python/logs/",
+  "root_class_id": "171ecabb-22fc-ec11-9136-005056b6948b",
+  "root_name": "Заказы на доставку",
+  "group_class_id": "15fd1d2e-6bfb-ec11-9136-005056b6948b",
+  "group_by_column_name": "Документ заказа.Номер",
+  "subobject_column_name": "Документ заказа.Подобъект",
+  "item_class_id": "c776174a-6cfb-ec11-9136-005056b6948b",
+  "object_attribute_id": "8f3be7b2-ff59-e911-8115-817c3f53a992",
+  "key_attribute_id": "c60bff0b-8759-ec11-911a-005056b6948b",
+  "key_column_name": "Заказ-Потребность",
+  "name_column_name": "Потребность.Номенклатура.Наименование",
+  "config_attribute_id": "ab479cfc-f496-e911-80cd-9783b3495d40",
+  "files_directory": "test_data/",
+  "attributes_file": "configs/attributes_delivery_order.xlsx",
+  "auth_data_file": "auth_data.txt"
+  }
