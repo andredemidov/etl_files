@@ -7,7 +7,7 @@ from data_sources.excel_adapter import ExcelAdapter
 from data_sources.neosintez_adapter import Neosintez
 from utilities import Utilities
 
-DEBUG = True
+DEBUG = False
 
 MODES = ['notification', 'delivery_order', 'storage']
 
