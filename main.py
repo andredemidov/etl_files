@@ -16,7 +16,7 @@ if __name__ == '__main__':
         mode = 'storage'
         config_file_name_suffix = mode
     elif len(sys.argv) != 3 and not DEBUG:
-        raise EnvironmentError('При запуске должны быть переданы два аргумента: mode и config suffix')
+        raise EnvironmentError('Two arguments expected: mode and config suffix')
     else:
         mode = sys.argv[1]
         config_file_name_suffix = sys.argv[2]
@@ -25,6 +25,9 @@ if __name__ == '__main__':
         raise EnvironmentError(f'Invalid mode {mode}. Only {",".join(MODES)} are available')
 
     config = Utilities.read_config(mode)
+    if DEBUG:
+        # if debug mode enabled set test files directory
+        config['files_directory'] = 'test_data/'
     mapping_data = Utilities.mapping_data()
     url = config['url']
     logs_path = config['logs_path']

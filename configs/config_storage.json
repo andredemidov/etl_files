@@ -12,7 +12,7 @@
   "key_column_name": "Потребность-Склад",
   "name_column_name": "Номенклатура",
   "config_attribute_id": "ab479cfc-f496-e911-80cd-9783b3495d40",
-  "files_directory": "test_data/",
+  "files_directory": "//irkoil/dfs/WorkDATA/OCOKS_IR_data/mt/storage/",
   "file_suffix": "_Склад",
   "attributes_file": "configs/attributes_storage.xlsx",
   "auth_data_file": "auth_data.txt"
