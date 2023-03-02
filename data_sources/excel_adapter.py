@@ -92,7 +92,7 @@ class ExcelAdapter:
                 date_delivery = datetime.strptime(date_delivery, '%Y-%m-%d') if date_delivery else None
 
                 date_ship = item.get('Дата отгрузки')
-                date_ship = datetime.strptime(date_ship, '%Y-%m-%d') if date_delivery else None
+                date_ship = datetime.strptime(date_ship, '%Y-%m-%d') if date_ship else None
 
                 delivery = date_delivery.strftime('%d.%m.%Y') if date_delivery else 'нет'
                 ship = date_ship.strftime('%d.%m.%Y') if date_ship else 'нет'
@@ -101,7 +101,6 @@ class ExcelAdapter:
 
                 item['Папка'] = "Приход " + date_delivery.strftime('%Y.%m') if date_delivery else 'нет' # date_delivery[:4] + '.' + date_delivery[5:7]
 
-            input_data.sort(key=lambda x: x['Плановая дата прихода на склад'])
         elif mode == 'storage':
             for item in input_data:
                 item['Потребность-Склад'] = item['Объект резерва.Номер'] + '-' + item['Склад']
