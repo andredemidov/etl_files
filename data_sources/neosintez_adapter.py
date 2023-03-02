@@ -349,7 +349,12 @@ class Neosintez:
             parent_id=self.COMMON_ATTRIBUTES_ID['subobject_list_parent_id'],
             class_id=self.COMMON_ATTRIBUTES_ID['subobject_list_class_id'],
         )
-        all_subobjects = all_subobjects['Result']
+        all_subobjects = list(
+            filter(
+                lambda x: x['Object']['Attributes'].get(self.COMMON_ATTRIBUTES_ID['titles_attribute_id']),
+                all_subobjects['Result']
+            )
+        )
 
         # get dict {subobject name: title attribute value}
         subobject_title_name = dict(map(lambda x: (x['Object']['Name'], x['Object']['Attributes'][
