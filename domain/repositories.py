@@ -155,23 +155,25 @@ class ItemRepository:
 
     def _get_roots(self):
         not_deleted = self.get('updated', 'new')
-        subobjects_roots = self._target_adapter.get_root_by_subobject_names(not_deleted)
-        for item in not_deleted:
-            subobject_data = subobjects_roots.get(item.subobject)
-            item.root_id = subobject_data.get('root_id') if subobject_data else None
-            if not item.root_id:
-                item.status = 'skip'
+        if not_deleted:
+            subobjects_roots = self._target_adapter.get_root_by_subobject_names(not_deleted)
+            for item in not_deleted:
+                subobject_data = subobjects_roots.get(item.subobject)
+                item.root_id = subobject_data.get('root_id') if subobject_data else None
+                if not item.root_id:
+                    item.status = 'skip'
 
     def _get_parents(self):
         not_deleted = self.get('update', 'new')
-        if self._group_by_column_name:
-            # groups must be a dict like {root_id: {group_name: group_id}}
-            groups = self._target_adapter.get_group_by_group_names(not_deleted)
-            for item in not_deleted:
-                item.parent_id = groups[item.root_id][item.group]
-        else:
-            for item in not_deleted:
-                item.parent_id = item.root_id
+        if not_deleted:
+            if self._group_by_column_name:
+                # groups must be a dict like {root_id: {group_name: group_id}}
+                groups = self._target_adapter.get_group_by_group_names(not_deleted)
+                for item in not_deleted:
+                    item.parent_id = groups[item.root_id][item.group]
+            else:
+                for item in not_deleted:
+                    item.parent_id = item.root_id
 
     # def _get_ids_for_delete(self) -> Collection:
     #     current_data = self._get_current_data()
