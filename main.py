@@ -304,6 +304,14 @@ class LevelOne(Neosintez):
     def _get_data_from_excel(self) -> list[dict]:
         data = self._read_excel(self.f_path).to_json(orient='records', force_ascii=False)
         input_data = json.loads(data) if data else list()
+        # отбор только восстановленных в Марково
+        if input_data and mode == 'mto' and self.name in 'МВЗ000821;МВЗ001069;МВЗ004863;МВЗ004864':
+
+            regexp = 'вос.*ие'
+            input_data = list(filter(
+                lambda x: x['Номер спецификации (РД)'] and re.search(regexp, x['Номер спецификации (РД)'].lower()) or
+                          x['Номер и дата служебной записки'] and re.search(regexp, x['Номер и дата служебной записки'].lower()),
+                input_data))
         return input_data
 
     @staticmethod
@@ -331,6 +339,7 @@ class LevelOne(Neosintez):
                     'Потребность.Этап согласования': str
                 }
             )
+
         elif mode == 'delivery_order':
             data = pd.read_excel(
                 file_path,
