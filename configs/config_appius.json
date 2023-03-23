@@ -1,0 +1,22 @@
+{
+  "url": "https://construction.irkutskoil.ru/",
+  "logs_path": "c://python/logs/",
+  "root_class_id": "171ecabb-22fc-ec11-9136-005056b6948b",
+  "root_name": "!Рабочая документация",
+  "group_class_id": "0dd7d9f9-d259-e911-8115-817c3f53a992",
+  "group_by_column_name": "Объект строительства",
+  "subobject_column_name": "Объект строительства",
+  "item_class_id": "26b6f6ab-f764-e911-8115-817c3f53a992",
+  "object_attribute_id": "8f3be7b2-ff59-e911-8115-817c3f53a992",
+  "key_attribute_id": "c60bff0b-8759-ec11-911a-005056b6948b",
+  "key_column_name": "Оригинал-номерГП",
+  "name_column_name": "Обозначение",
+  "config_attribute_id": "f8683b26-41af-ec11-9124-005056b6948b",
+  "files_directory": "//irkoil/dfs/WorkDATA/1C_OBMEN/Неосинтез/Аппиус/",
+  "file_suffix": "Аппиус",
+  "attributes_file": "configs/attributes_appius.xlsx",
+  "auth_data_file": "auth_data.txt",
+  "save_skipped": true,
+  "root_for_skipped_class_id": "df20f15b-a5df-ec11-912f-005056b6948b",
+  "one_root_mode": false
+  }
