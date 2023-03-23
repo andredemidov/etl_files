@@ -35,6 +35,8 @@ class IntegrateByModeConstruction:
         self._log_statistic(delete_statistic)
 
         logging.info('Completed')
+        total = self._item_repository.total_in_target()
+        logging.info(f'Total in target system {total}')
 
 
 class IntegrateByMode:

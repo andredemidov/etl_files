@@ -31,6 +31,8 @@ class ItemRepository:
             name_column_name: str,
             mode: str,
             group_by_column_name: str,
+            save_skipped: bool = False,
+            one_root_mode: bool = False,
             entries: list[Item] = None
     ):
         self._construction = construction
@@ -44,6 +46,8 @@ class ItemRepository:
         self._group_by_column_name = group_by_column_name
         self._new_data = None
         self._current_data = None
+        self._save_skipped = save_skipped
+        self._one_root_mode = one_root_mode
         if entries:
             self._entries.extend(entries)
 
@@ -85,8 +89,11 @@ class ItemRepository:
                 raise TypeError('only Item instances can be in the repository')
 
     def create(self) -> dict[str, int]:
-        self._get_parents()
-        statistic_create = self._target_adapter.create_items(self.get('new'))
+        items_for_create = self.get('new')
+        if self._save_skipped:
+            items_for_create.extend(self.get('skip'))
+        self._get_parents(items=items_for_create)
+        statistic_create = self._target_adapter.create_items(items_for_create)
         return statistic_create
 
     def update(self) -> dict[str, int]:
@@ -95,7 +102,7 @@ class ItemRepository:
 
     def _get_new_data(self) -> list:
         if not self._new_data:
-            self._new_data = self._input_adapter.get_data(self._mode, self._construction.key)
+            self._new_data = self._input_adapter.get_data(self._construction.key)
         return self._new_data
         # items = [Item(self._construction, mode, data) for data in input_data]
         # self._entries.extend(items)
@@ -108,6 +115,7 @@ class ItemRepository:
     def _get_status(self):
         current_data = self._get_current_data()
         current_dict = {}
+        current_items_for_delete = []
         for current_item in current_data:
             if current_item[self._key_column_name] in current_dict:
                 # duplicate detected
@@ -120,7 +128,7 @@ class ItemRepository:
                     self_id=current_item['id'],
                     status='delete'
                 )
-                self.add(item)
+                current_items_for_delete.append(item)
             else:
                 current_dict[current_item[self._key_column_name]] = current_item
         # map new data with current
@@ -151,50 +159,43 @@ class ItemRepository:
                 self_id=current_item['id'],
                 status='delete'
             )
-            self.add(item)
+            current_items_for_delete.append(item)
+        self.add(*current_items_for_delete)
 
     def _get_roots(self):
-        not_deleted = self.get('updated', 'new')
+        not_deleted = self.get('new')
         if not_deleted:
-            subobjects_roots = self._target_adapter.get_root_by_subobject_names(not_deleted)
-            for item in not_deleted:
-                subobject_data = subobjects_roots.get(item.subobject)
-                item.root_id = subobject_data.get('root_id') if subobject_data else None
-                if not item.root_id:
-                    item.status = 'skip'
+            if self._one_root_mode:
+                self._get_one_root(not_deleted)
+            else:
+                subobjects_roots = self._target_adapter.get_root_by_subobject_names(not_deleted)
+                for item in not_deleted:
+                    subobject_data = subobjects_roots.get(item.subobject)
+                    item.root_id = subobject_data.get('root_id') if subobject_data else None
+                    if not item.root_id:
+                        item.status = 'skip'
+                if self._save_skipped:
+                    self._get_one_root(self.get('skip'))
 
-    def _get_parents(self):
-        not_deleted = self.get('update', 'new')
-        if not_deleted:
+    def _get_one_root(self, items: list[Item]):
+        if items:
+            one_root_id = self._target_adapter.get_one_root_for_construction(self._construction)
+            for item in items:
+                item.root_id = one_root_id
+
+    def _get_parents(self, items: list[Item]):
+        if items:
             if self._group_by_column_name:
                 # groups must be a dict like {root_id: {group_name: group_id}}
-                groups = self._target_adapter.get_group_by_group_names(not_deleted)
-                for item in not_deleted:
+                groups = self._target_adapter.get_group_by_group_names(items)
+                for item in items:
                     item.parent_id = groups[item.root_id][item.group]
             else:
-                for item in not_deleted:
+                for item in items:
                     item.parent_id = item.root_id
 
-    # def _get_ids_for_delete(self) -> Collection:
-    #     current_data = self._get_current_data()
-    #     new_data = self._get_new_data()
-    #
-    #     items = dict(map(lambda x: (x['id'], x[self._key_column_name]), current_data))
-    #     # кортеж идентификаторов дублей по ключевому атрибуту
-    #     double_items = tuple(
-    #         filter(lambda k: k[1] > 1, map(lambda x: (x[0], list(items.values()).count(x[1])), items.items())))
-    #     double_items_id = set(item[0] for item in double_items)
-    #
-    #     item_key_set = set(items.values())
-    #     import_item_key_set = set(map(lambda x: x[self._key_column_name], new_data))
-    #
-    #     canceled_items_set = item_key_set - import_item_key_set
-    #     canceled_items = tuple(filter(lambda x: x[1] in canceled_items_set, items.items()))
-    #
-    #     canceled_items_id = set(item[0] for item in canceled_items)
-    #     ids_for_delete = canceled_items_id | double_items_id
-    #
-    #     return ids_for_delete
+    def total_in_target(self) -> int:
+        return self._target_adapter.total_in_neosintez(self._construction)
 
     def delete(self) -> dict:
         """

@@ -1,19 +1,19 @@
 import sys
 import logging
 from datetime import datetime
-from domain.use_cases import IntegrateByModeConstruction
-from domain.repositories import ConstructionRepository, ItemRepository
+from domain import use_cases
+from domain import repositories
 from data_sources.excel_adapter import ExcelAdapter
 from data_sources.neosintez_adapter import Neosintez
 from utilities import Utilities
 
 DEBUG = False
 
-MODES = ['notification', 'delivery_order', 'storage']
+MODES = ['notification', 'delivery_order', 'storage', 'appius']
 
 if __name__ == '__main__':
     if DEBUG:
-        mode = 'storage'
+        mode = 'appius'
         config_file_name_suffix = mode
     elif len(sys.argv) != 3 and not DEBUG:
         raise EnvironmentError('Two arguments expected: mode and config suffix')
@@ -41,17 +41,17 @@ if __name__ == '__main__':
     )
     logging.info(f'Start {mode} {config_file_name_suffix}')
     target_adapter = Neosintez(url, config, mapping_data)
-    new_data_adapter = ExcelAdapter(config['files_directory'], config['file_suffix'], mapping_data)
+    new_data_adapter = ExcelAdapter(mode, config['files_directory'], config['file_suffix'], mapping_data)
 
     try:
-        construction_repository = ConstructionRepository(target_adapter)
+        construction_repository = repositories.ConstructionRepository(target_adapter)
         constructions = construction_repository.get()
         logging.info(f'Total constructions {len(constructions)}')
 
         for construction in constructions:
             try:
                 logging.info(construction.name)
-                item_repository = ItemRepository(
+                item_repository = repositories.ItemRepository(
                     construction=construction,
                     target_adapter=target_adapter,
                     input_adapter=new_data_adapter,
@@ -60,8 +60,10 @@ if __name__ == '__main__':
                     subobject_column_name=config['subobject_column_name'],
                     name_column_name=config['name_column_name'],
                     group_by_column_name=config['group_by_column_name'],
+                    save_skipped=config.get('save_skipped') is True,
+                    one_root_mode=config.get('one_root_mode') is True,
                 )
-                task = IntegrateByModeConstruction(item_repository)
+                task = use_cases.IntegrateByModeConstruction(item_repository)
                 task.execute()
                 new_data_adapter.finish()
             except Exception as e:

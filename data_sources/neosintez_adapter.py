@@ -20,6 +20,7 @@ class Neosintez:
         self.url = url
         self._session_object = None
         self._token_keeper = None
+        self._ref_atr_values = {}
         self._config = config
         self._mapping_data = mapping_data
 
@@ -283,8 +284,14 @@ class Neosintez:
             atr_value = item.new_data.get(attribute['name'])
             atr_id = attribute['id']
             atr_type = attribute['type']
-            if atr_type == 8:
-                atr_value = self._ref_atr(value=atr_value, atr=attribute)
+            if atr_type == 8 and atr_value:
+                ref_atr_key = atr_value
+                values = self._ref_atr_values.get(attribute['id'])
+                atr_value = values.get(ref_atr_key) if values else None
+                if not atr_value:
+                    atr_value = self._ref_atr(value=ref_atr_key, atr=attribute)
+                    self._ref_atr_values.setdefault(attribute['id'], {})
+                    self._ref_atr_values[attribute['id']][ref_atr_key] = atr_value
             atr_body = {
                 'Name': 'forvalidation',
                 'Value': atr_value,
@@ -298,7 +305,7 @@ class Neosintez:
         """
         Method creates all of passed items in neosintez and writes only key attribute with key value of each item.
         Against, method only creates the items and not writes all of attributes values but instead that it changes
-        the status of item to "updated" for further handling.
+        the status of item to "updated" for further handling
         :param items: list if Item instances to create
         :return: counter like dict with keys "success" and "error"
         """
@@ -391,9 +398,20 @@ class Neosintez:
         # subobject_roots_id = {subobject_name: roots_id.get(subobject_name) for subobject_name in subobject_names}
         return result
 
+    def get_one_root_for_construction(self, construction: Construction) -> str:
+        construction_id = construction.self_id
+        class_id = self._config['root_for_skipped_class_id']
+        root_id = self._get_id_by_name(
+            parent_id=construction_id,
+            class_id=class_id,
+            name=self._config['root_name'],
+            create=True
+        )
+        return root_id
+
     def get_group_by_group_names(self, items: list[Item]) -> dict[str, dict[str, str]]:
         """
-        Method searches of groups by name inside root. If there is no group it creates a group.
+        Method searches of groups by name inside root. If there is no group it creates a group
         :param items: list of items
         :return: dict like {root_id: {group_name: group_id}}
         """
@@ -456,7 +474,7 @@ class Neosintez:
         return status
 
     def _ref_atr(self, value, atr):
-        value = value.replace('.', '')
+        value = value.rstrip('.')
         folder_id = atr['folder']
         class_id = atr['class']
         item_id = self._get_id_by_name(folder_id, class_id, value)
@@ -465,7 +483,8 @@ class Neosintez:
         else:
             return None
 
-    def total_in_neosintez(self, parent_id):
+    def total_in_neosintez(self, construction: Construction) -> int:
+        parent_id = construction.self_id
         response = self._get_items_by_class(parent_id, self._config['item_class_id'], take=0)
         return response['Total']
 
