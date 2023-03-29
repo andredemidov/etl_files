@@ -7,12 +7,14 @@ import pandas as pd
 
 class ExcelAdapter:
 
-    def __init__(self, mode, files_directory: str, suffix, mapping_data: dict):
+    def __init__(self, mode, files_directory: str, suffix, mapping_data: dict, key_columns: list, key_column_name: str):
         self._mode = mode
         self._files_directory = files_directory
         self._mapping_data = mapping_data
         self._file_name = None
         self._suffix: str = suffix
+        self._key_columns: list = key_columns
+        self._key_column_name: str = key_column_name
 
     def get_data(self, key: str) -> list[dict]:
         """
@@ -22,9 +24,15 @@ class ExcelAdapter:
         :return: list of serialized data
         """
         f_path = self._get_file_path(key)
-        data = self._read_excel(f_path, key).to_json(orient='records', force_ascii=False)
+        data = self._read_excel(f_path, key)
+        data.drop_duplicates(inplace=True, subset=self._key_columns)
+        data = data.to_json(orient='records', force_ascii=False)
         input_data = json.loads(data) if data else list()
         output_data = self._map_data(input_data)
+        # create key column
+        for item in output_data:
+            values = [item[column] for column in self._key_columns if item[column]]
+            item[self._key_column_name] = '-'.join(values)
         self._extra_handling(output_data)
         return output_data
 
@@ -81,7 +89,6 @@ class ExcelAdapter:
             if not key:
                 raise ValueError('There is no "key" parameter to filter input data')
             data = data[(data['Проект системы.Код'] == key)]
-            data.drop_duplicates(inplace=True, subset=['Оригинал', 'Объект генплана номер'])
         return data
 
     def _extra_handling(self, input_data: list[dict]):
@@ -92,32 +99,11 @@ class ExcelAdapter:
                 subobject = item['Объект строительства']
                 item['Объект строительства'] = subobject if subobject else 'подобъект не указан'
 
-                subobject_number = item['Объект генплана номер']
-                key = item['Оригинал'] + '-' + subobject_number if subobject_number else item['Оригинал']
-                item['Оригинал-номерГП'] = key
-
-        elif self._mode == 'delivery_order':
-            for item in input_data:
-                item['Заказ-Потребность'] = item['Документ заказа.Номер'] + "-" + item['Потребность.Номер']
-            input_data.sort(key=lambda x: x['Документ заказа.Номер'])
         elif self._mode == 'notification':
             for item in input_data:
-                date_delivery = item.get('Плановая дата прихода на склад')  # yyyy-mm-dd
+                date_delivery = item.get('Плановая дата прихода на склад')
                 date_delivery = datetime.strptime(date_delivery, '%Y-%m-%d') if date_delivery else None
-
-                date_ship = item.get('Дата отгрузки')
-                date_ship = datetime.strptime(date_ship, '%Y-%m-%d') if date_ship else None
-
-                delivery = date_delivery.strftime('%d.%m.%Y') if date_delivery else 'нет'
-                ship = date_ship.strftime('%d.%m.%Y') if date_ship else 'нет'
-                key = '-'.join([item['Потребность.Номер'], ship, delivery])
-                item['Потребность-Дата отгрузки-Дата прихода'] = key
-
                 item['Папка'] = "Приход " + date_delivery.strftime('%Y.%m') if date_delivery else 'нет'
-
-        elif self._mode == 'storage':
-            for item in input_data:
-                item['Потребность-Склад'] = item['Объект резерва.Номер'] + '-' + item['Склад']
 
     def _map_data(self, input_data) -> list[dict]:
         func_dict = {

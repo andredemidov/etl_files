@@ -9,7 +9,11 @@
   "item_class_id": "95655fc4-cc43-ed11-9148-005056b6948b",
   "object_attribute_id": "8f3be7b2-ff59-e911-8115-817c3f53a992",
   "key_attribute_id": "c60bff0b-8759-ec11-911a-005056b6948b",
-  "key_column_name": "Потребность-Дата отгрузки-Дата прихода",
+  "key_column_name": "Потребность-Уведомление",
+  "key_columns": [
+    "Потребность",
+    "Резервирование/Планирование закупок/Спецификация/РасходныйДокумент/Поступление/Уведомление об отгрузке.Номер"
+  ],
   "name_column_name": "Потребность.Номенклатура.Наименование",
   "config_attribute_id": "ab479cfc-f496-e911-80cd-9783b3495d40",
   "files_directory": "//irkoil/dfs/WorkDATA/OCOKS_IR_data/mt/notifications/",

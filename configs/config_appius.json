@@ -10,6 +10,10 @@
   "object_attribute_id": "8f3be7b2-ff59-e911-8115-817c3f53a992",
   "key_attribute_id": "c60bff0b-8759-ec11-911a-005056b6948b",
   "key_column_name": "Оригинал-номерГП",
+  "key_columns": [
+    "Оригинал",
+    "Объект генплана номер"
+  ],
   "name_column_name": "Обозначение",
   "config_attribute_id": "f8683b26-41af-ec11-9124-005056b6948b",
   "files_directory": "//irkoil/dfs/WorkDATA/1C_OBMEN/Неосинтез/Аппиус/",

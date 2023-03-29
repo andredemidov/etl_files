@@ -42,7 +42,14 @@ if __name__ == '__main__':
     )
     logging.info(f'Start {mode} {config_file_name_suffix}')
     target_adapter = Neosintez(url, config, mapping_data)
-    new_data_adapter = ExcelAdapter(mode, config['files_directory'], config['file_suffix'], mapping_data)
+    new_data_adapter = ExcelAdapter(
+        mode=mode,
+        files_directory=config['files_directory'],
+        suffix=config['file_suffix'],
+        mapping_data=mapping_data,
+        key_columns=config['key_columns'],
+        key_column_name=config['key_column_name'],
+    )
 
     try:
         construction_repository = repositories.ConstructionRepository(target_adapter)
