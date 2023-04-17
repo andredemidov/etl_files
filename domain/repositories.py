@@ -114,6 +114,10 @@ class ItemRepository:
 
     def _get_status(self):
         current_data = self._get_current_data()
+        # order list by delete attribute to keep ones not deleted first
+        # to ensure that if there is not deleted one among duplicates this one will be saved
+        current_data.sort(key=lambda x: x.delete)
+        # create dict like {key: item}. If there is a duplicate drop it on the delete list
         current_dict = {}
         current_items_for_delete = []
         for current_item in current_data:
@@ -123,7 +127,7 @@ class ItemRepository:
                 item = Item(
                     construction=self._construction,
                     item_type=self._mode,
-                    new_data=dict(),
+                    new_data=current_item,
                     name='forvalidation',
                     self_id=current_item['id'],
                     status='delete'
@@ -131,7 +135,7 @@ class ItemRepository:
                 current_items_for_delete.append(item)
             else:
                 current_dict[current_item[self._key_column_name]] = current_item
-        # map new data with current
+        # match new data with current
         for new_item in self._entries:
             # if a match exists, remove it from the current_dict and take the id to update
             match_item = current_dict.pop(new_item.key, None)
@@ -154,7 +158,7 @@ class ItemRepository:
             item = Item(
                 construction=self._construction,
                 item_type=self._mode,
-                new_data=dict(),
+                new_data=current_item,
                 name='forvalidation',
                 self_id=current_item['id'],
                 status='delete'
@@ -204,6 +208,7 @@ class ItemRepository:
         """
         statistic = {'success': 0, 'error': 0}
         for item in self.get('delete'):
-            status = self._target_adapter.delete_item(item)
+            status = self._target_adapter.mark_as_delete(item)
+            # status = self._target_adapter.delete_item(item)
             statistic[status] += 1
         return statistic

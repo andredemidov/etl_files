@@ -14,6 +14,8 @@ class Neosintez:
         'titles_attribute_id': '4f3b1845-4d7c-ed11-9153-005056b6948b',
         'subobject_list_class_id': 'e2cba4ee-487c-ed11-9153-005056b6948b',
         'subobject_list_parent_id': 'b535c92d-4d7c-ed11-9153-005056b6948b',
+        'delete_mark_attribute_id': '',
+        'delete_mark_value_id': '',
     }
 
     def __init__(self, url, config, mapping_data):
@@ -279,7 +281,15 @@ class Neosintez:
         return result
 
     def _get_request_body(self, item: Item) -> list:
-        request_body = list()
+        # remove delete mark
+        request_body = [
+            {
+                'Name': 'forvalidation',
+                'Value': None,
+                'Type': 8,
+                'Id': self.COMMON_ATTRIBUTES_ID['delete_mark_attribute_id']
+            }
+        ]
         for attribute in self._mapping_data:
             atr_value = item.new_data.get(attribute['name'])
             atr_id = attribute['id']
@@ -435,7 +445,16 @@ class Neosintez:
         response = self._get_items_by_class(parent_id, self._config['item_class_id'])
         data = list()
         for item in response['Result']:
-            item_dict = {'id': item['Object']['Id']}
+            # check if marked for delete
+            marked_delete = item['Object']['Attributes'].get(self.COMMON_ATTRIBUTES_ID['delete_mark_attribute_id'])
+            if marked_delete:
+                marked_delete = marked_delete['Value'] == self.COMMON_ATTRIBUTES_ID['delete_mark_value_id']
+            else:
+                marked_delete = False
+            item_dict = {
+                'id': item['Object']['Id'],
+                'delete': marked_delete
+            }
             for attribute in self._mapping_data:
                 atr_id = attribute['id']
                 name = attribute['name']
@@ -467,6 +486,27 @@ class Neosintez:
             'Content-Type': 'application/json-patch+json'
         }
         response = self._session.delete(req_url, headers=headers)
+        if response.status_code == 200:
+            status = 'success'
+        else:
+            status = 'error'
+        return status
+
+    def mark_as_delete(self, item: Item) -> str:
+        # if the item already marked just skip it
+        delete_mark = item.new_data['delete']
+        if delete_mark:
+            return 'success'
+
+        attribute_value_id = self.COMMON_ATTRIBUTES_ID['delete_mark_attribute_id']
+        value_id = self.COMMON_ATTRIBUTES_ID['delete_mark_value_id']
+        request_body = [{
+            'Name': 'forvalidation',
+            'Value': {'Id': value_id, 'Name': 'forvalidation'},
+            'Type': 8,
+            'Id': attribute_value_id
+        }]
+        response = self._put_attributes(item.self_id, request_body)
         if response.status_code == 200:
             status = 'success'
         else:

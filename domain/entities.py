@@ -37,3 +37,4 @@ class Item:
     parent_id: str = None
     root_id: str = None
     self_id: str = None
+    delete: bool = False

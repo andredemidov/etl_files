@@ -33,6 +33,7 @@ class ExcelAdapter:
         for item in output_data:
             values = [item[column] for column in self._key_columns if item[column]]
             item[self._key_column_name] = '-'.join(values)
+            item['delete'] = False
         self._extra_handling(output_data)
         return output_data
 
