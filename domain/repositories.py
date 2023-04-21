@@ -116,7 +116,7 @@ class ItemRepository:
         current_data = self._get_current_data()
         # order list by delete attribute to keep ones not deleted first
         # to ensure that if there is not deleted one among duplicates this one will be saved
-        current_data.sort(key=lambda x: x.delete)
+        current_data.sort(key=lambda x: x['delete'])
         # create dict like {key: item}. If there is a duplicate drop it on the delete list
         current_dict = {}
         current_items_for_delete = []

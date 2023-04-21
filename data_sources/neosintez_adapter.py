@@ -14,8 +14,8 @@ class Neosintez:
         'titles_attribute_id': '4f3b1845-4d7c-ed11-9153-005056b6948b',
         'subobject_list_class_id': 'e2cba4ee-487c-ed11-9153-005056b6948b',
         'subobject_list_parent_id': 'b535c92d-4d7c-ed11-9153-005056b6948b',
-        'delete_mark_attribute_id': '',
-        'delete_mark_value_id': '',
+        'delete_mark_attribute_id': '7d39b7fb-b9eb-ec11-9131-005056b6948b',
+        'delete_mark_value_id': 'd5fa86ec-b9eb-ec11-9131-005056b6948b',
     }
 
     def __init__(self, url, config, mapping_data):
