@@ -50,7 +50,7 @@ class ExcelAdapter:
         return output_data
 
     def _get_file_path(self, key):
-        if self._mode == 'appius':
+        if self._from_one_file:
             f_list = [f for f in os.listdir(path=self._files_directory) if self._suffix in f and '~' not in f]
         else:
             f_list = [f for f in os.listdir(path=self._files_directory) if key in f and self._suffix in f and '~' not in f]
@@ -104,7 +104,8 @@ class ExcelAdapter:
                 raise ValueError('There is no "key" parameter to filter input data')
             if not self._filter_column_name_for_one_file:
                 raise ValueError('There is no "key" parameter to filter input data')
-            data = data[(data[self._filter_column_name_for_one_file] in key)]
+            key = [one.strip() for one in key.split(';')]
+            data = data[data[self._filter_column_name_for_one_file].str.strip().isin(key)]
         return data
 
     def _extra_handling(self, input_data: list[dict]):
