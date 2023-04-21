@@ -15,9 +15,11 @@
     "Резервирование/Планирование закупок/Спецификация/РасходныйДокумент/Поступление/Уведомление об отгрузке.Номер"
   ],
   "name_column_name": "Потребность.Номенклатура.Наименование",
-  "config_attribute_id": "ab479cfc-f496-e911-80cd-9783b3495d40",
+  "config_attribute_id": "bfbd61bc-bd8e-ec11-911d-005056b6948b",
   "files_directory": "//irkoil/dfs/WorkDATA/OCOKS_IR_data/mt/notifications/",
   "file_suffix": "_У",
   "attributes_file": "configs/attributes_notification.xlsx",
-  "auth_data_file": "auth_data.txt"
+  "auth_data_file": "auth_data.txt",
+  "from_one_file": true,
+  "filter_column_name_for_one_file": "Потребность.МВЗ.Код"
   }

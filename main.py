@@ -49,6 +49,8 @@ if __name__ == '__main__':
         mapping_data=mapping_data,
         key_columns=config['key_columns'],
         key_column_name=config['key_column_name'],
+        from_one_file=config.get('from_one_file'),
+        filter_column_name_for_one_file=config.get('filter_column_name_for_one_file')
     )
 
     try:

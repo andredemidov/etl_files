@@ -7,7 +7,17 @@ import pandas as pd
 
 class ExcelAdapter:
 
-    def __init__(self, mode, files_directory: str, suffix, mapping_data: dict, key_columns: list, key_column_name: str):
+    def __init__(
+            self,
+            mode,
+            files_directory: str,
+            suffix,
+            mapping_data: dict,
+            key_columns: list,
+            key_column_name: str,
+            from_one_file: bool = False,
+            filter_column_name_for_one_file: str = None
+    ):
         self._mode = mode
         self._files_directory = files_directory
         self._mapping_data = mapping_data
@@ -15,6 +25,8 @@ class ExcelAdapter:
         self._suffix: str = suffix
         self._key_columns: list = key_columns
         self._key_column_name: str = key_column_name
+        self._from_one_file: bool = from_one_file
+        self._filter_column_name_for_one_file: str = filter_column_name_for_one_file
 
     def get_data(self, key: str) -> list[dict]:
         """
@@ -87,10 +99,12 @@ class ExcelAdapter:
             sheet_name='TDSheet',
             converters=converters[self._mode]
         )
-        if self._mode == 'appius':
+        if self._from_one_file:
             if not key:
                 raise ValueError('There is no "key" parameter to filter input data')
-            data = data[(data['Проект системы.Код'] == key)]
+            if not self._filter_column_name_for_one_file:
+                raise ValueError('There is no "key" parameter to filter input data')
+            data = data[(data[self._filter_column_name_for_one_file] in key)]
         return data
 
     def _extra_handling(self, input_data: list[dict]):

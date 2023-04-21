@@ -22,5 +22,7 @@
   "auth_data_file": "auth_data.txt",
   "save_skipped": true,
   "root_for_skipped_class_id": "df20f15b-a5df-ec11-912f-005056b6948b",
-  "one_root_mode": false
+  "one_root_mode": false,
+  "from_one_file": true,
+  "filter_column_name_for_one_file": "Проект системы.Код"
   }
