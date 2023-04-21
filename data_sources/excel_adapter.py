@@ -186,7 +186,7 @@ class ExcelAdapter:
         Method encapsulates the action upon finish. Now there is one action to move the handled file to the prev folder
         :return:
         """
-        if self._mode != 'appius':
+        if not self._from_one_file:
             f_path = self._files_directory + self._file_name
             f_prev_path = self._files_directory + 'prev/prev_' + self._file_name
             os.replace(f_path, f_prev_path)
